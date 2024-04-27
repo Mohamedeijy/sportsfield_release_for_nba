@@ -1,8 +1,6 @@
 {
-  "world_cup": {
-    "train_dataset": "",
-    "val_dataset": "",
-    "test_dataset": "./data/world_cup_test.h5"
+  "nba": {
+    "dataset": "./../data/custom_nba_broadcast"
   },
   "out": "./out"
 }
