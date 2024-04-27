@@ -82,3 +82,30 @@ def get_four_corners(homo_mat, canon4pts=None):
     xy_warped, z_warped = xy_warped.split(2, dim=1)
     xy_warped = xy_warped / (z_warped + 1e-8)
     return xy_warped
+
+def get_six_corners(homo_mat, canon6pts=None):
+    '''
+    calculate the 6 corners after transformation, from frame to template
+    assuming the original 6 points of the frame are [-0.5,-0.3;−0.5,0.1;−0.5,0.5;0.5,-0.3;0.5,0.5; 0.5,0.1;]
+    i.e. corners of the lower 2/5ths and lower 4/5ths of the frame
+    note: this function supports batch processing
+    Arguments:
+        homo_mat {[type]} -- [homography, shape: (B, 3, 3) or (3, 3)]
+
+    Return:
+        xy_warped -- torch.Size([B, 2, 6])
+    '''
+    # append ones for homogeneous coordinates
+    if homo_mat.shape == (3, 3):
+        homo_mat = homo_mat[None]
+    assert homo_mat.shape[1:] == (3, 3)
+    if canon6pts is None:
+        canon6pts = utils.to_torch(utils.CANON6PTS_NP())
+    assert canon6pts.shape == (6, 2)
+    x, y = canon6pts[:, 0], canon6pts[:, 1]
+    xy = torch.stack([x, y, torch.ones_like(x)])
+    # warp points to model coordinates
+    xy_warped = torch.matmul(homo_mat, xy)  # H.bmm(xy)
+    xy_warped, z_warped = xy_warped.split(2, dim=1)
+    xy_warped = xy_warped / (z_warped + 1e-8)
+    return xy_warped

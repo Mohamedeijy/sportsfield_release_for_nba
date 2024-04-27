@@ -127,6 +127,10 @@ def LOWER_CANON4PTS_NP():
     return np.array([[-0.5, 0.1], [-0.5, 0.5], [0.5, 0.5], [0.5, 0.1]], dtype=np.float32)
 
 
+def CANON6PTS_NP():
+    return np.array([[-0.5,-0.3], [-0.5, 0.1], [-0.5, 0.5], [0.5,-0.3], [0.5, 0.5], [0.5, 0.1]], dtype=np.float32)
+
+
 def get_perspective_transform(src, dst):
     '''
     kornia: https://github.com/arraiyopensource/kornia
