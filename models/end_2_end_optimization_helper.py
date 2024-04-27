@@ -4,6 +4,7 @@ import numpy as np
 
 from utils import utils
 from models import init_guesser
+import cv2
 
 
 def get_homography_between_corners_and_default_canon4pts(corners, canon4pts_type: str):
@@ -14,6 +15,11 @@ def get_homography_between_corners_and_default_canon4pts(corners, canon4pts_type
     elif canon4pts_type == 'full':
         full_canon4pts = get_default_canon4pts(batch_size, canon4pts_type)
         homography = utils.get_perspective_transform(full_canon4pts, corners)
+    elif canon4pts_type == 'six':
+        # more than 4 points = can't use kornia method
+        canon6pts = get_default_canon4pts(batch_size, canon4pts_type)
+        homography, _ = cv2.findHomography(canon6pts, corners, cv2.RANSAC)
+        homography = utils.to_torch(homography)
     else:
         raise ValueError('unknown canon4pts type')
     return homography
@@ -30,9 +36,13 @@ def get_default_canon4pts(batch_size, canon4pts_type: str):
         full_canon4pts = np.tile(full_canon4pts, (batch_size, 1, 1))
         full_canon4pts = utils.to_torch(full_canon4pts)
         return full_canon4pts
+    elif canon4pts_type == 'six':
+        canon6pts = utils.CANON6PTS_NP()
+        canon6pts = np.tile(canon6pts, (batch_size, 1, 1))
+        canon6pts = utils.to_torch(canon6pts)
+        return canon6pts
     else:
         raise ValueError('unknown canon4pts type')
-
 
 class HomographyInferenceFactory(object):
     @staticmethod
@@ -80,26 +90,32 @@ class HomographyInference(abc.ABC):
         return self.upstream.training
 
     @abc.abstractmethod
-    def infer_upstream_homography(self, frame):
+    def infer_upstream_homography(self, frame, canon4pts_type):
         pass
 
     @abc.abstractmethod
-    def infer_upstream_corners(self, frame):
+    def infer_upstream_corners(self, frame, canon4pts_type):
         pass
 
 
 class HomographyInferenceDeepHomo(HomographyInference):
 
-    def infer_upstream_corners(self, frame):
+    def infer_upstream_corners(self, frame, canon4pts_type):
         self.upstream.eval()
         inferred_corners_orig = self.upstream(frame)
-        inferred_corners_orig = inferred_corners_orig.reshape(-1, 2, 4)
+        inferred_corners_orig = inferred_corners_orig.reshape(-1, 2, 6) \
+            if canon4pts_type == 'six' else inferred_corners_orig.reshape(-1, 2, 4)
         inferred_corners_orig = inferred_corners_orig.permute(0, 2, 1)
         return inferred_corners_orig
 
-    def infer_upstream_homography(self, frame):
+    def infer_upstream_homography(self, frame, canon4pts_type):
         batch_size = frame.shape[0]
-        inferred_corners_orig = self.infer_upstream_corners(frame)
-        lower_canon4pts = get_default_canon4pts(batch_size, canon4pts_type='lower')
-        homography = utils.get_perspective_transform(lower_canon4pts, inferred_corners_orig)
+        inferred_corners_orig = self.infer_upstream_corners(frame, canon4pts_type)
+        lower_canon_pts = get_default_canon4pts(batch_size, canon4pts_type)
+        # more than 4 points = can't use the kornia method
+        if canon4pts_type == 'six':
+            homography, _ = cv2.findHomography(lower_canon_pts, inferred_corners_orig, cv2.RANSAC)
+            homography = utils.to_torch(homography)
+        else:
+            homography = utils.get_perspective_transform(lower_canon_pts, inferred_corners_orig)
         return homography

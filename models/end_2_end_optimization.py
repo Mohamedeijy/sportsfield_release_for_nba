@@ -141,7 +141,7 @@ class End2EndOptimDirectH(End2EndOptim):
         B = frame.shape[0]
 
         template = template.repeat(B, 1, 1, 1)
-        upstream_homography = self.homography_inference.infer_upstream_homography(frame)
+        upstream_homography = self.homography_inference.infer_upstream_homography(frame, canon4pts_type=self.opt.directh_part)
         # canon4pts would be full or lower based on the options
         canon4pts = end_2_end_optimization_helper.get_default_canon4pts(B, canon4pts_type=self.opt.directh_part)
 
@@ -176,7 +176,7 @@ class End2EndOptimSTN(End2EndOptim):
         B = frame.shape[0]
         assert B == 1, 'STN optimization only support one image at a time'
 
-        upstream_homography = self.homography_inference.infer_upstream_homography(frame)
+        upstream_homography = self.homography_inference.infer_upstream_homography(frame, canon4pts_type=self.opt.directh_part)
         optim = self.create_gd_optimizer(params=self.homography_inference.get_upstream_params())
         optim_tools = {'optimizer': optim}
         loss_hist, corners_optim_list = self.main_optimization_loop(frame,

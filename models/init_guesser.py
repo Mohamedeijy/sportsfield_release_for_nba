@@ -18,8 +18,7 @@ class InitialGuesserFactory(object):
             model = InitialGuesser(opt)
             model = utils.set_model_device(model)
         else:
-            raise ValueError('unknown initial guess model:',
-                             opt.loss_surface_name)
+            raise ValueError('unknown initial guess model')
         return model
 
 
@@ -43,7 +42,7 @@ class InitialGuesser(base_model.BaseModel, torch.nn.Module):
             exit(1)
 
     def create_model(self):
-        self.out_dim = 8
+        self.out_dim = 12 # 6 points of x,y coordinates
         self.input_features = 3
         resnet_config = self.create_resnet_config()
         self.feature_extractor = resnet.resnet18(resnet_config, pretrained=resnet_config.pretrained,

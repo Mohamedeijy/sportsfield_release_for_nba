@@ -30,7 +30,8 @@ class BaseModel(abc.ABC):
 
         # 3. try loading weights
         key_name = 'model_state_dict'
-        saved_weights = checkpoint[key_name]
+        # saved_weights = checkpoint[key_name]
+        saved_weights = checkpoint
         try:
             self.load_state_dict(saved_weights)
         except RuntimeError:
