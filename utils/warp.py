@@ -1,8 +1,12 @@
+import random
 
+import cv2
+import imageio
 import torch
 import numpy as np
 
-from utils import utils
+from models import end_2_end_optimization_helper
+from utils import utils, image_utils
 
 
 def warp_image(img, H, out_shape=None, input_grid=None):
@@ -109,3 +113,24 @@ def get_six_corners(homo_mat, canon6pts=None):
     xy_warped, z_warped = xy_warped.split(2, dim=1)
     xy_warped = xy_warped / (z_warped + 1e-8)
     return xy_warped
+
+
+def perturbe_homography(gt_homography, global_translation_param=0.05, local_translation_param=0.02):
+    # get canon 6 points
+    lower_canon_6pts = end_2_end_optimization_helper.get_default_canon4pts(1, canon4pts_type='six')
+    # compute destination vector from canon 6 points and homography matrix
+    original_corners = get_six_corners(gt_homography, lower_canon_6pts[0])
+    original_corners = torch.flatten(original_corners.permute(0, 2, 1), start_dim=1)
+    # add a global noise to the whole vector
+    corners_with_noise = original_corners + random.uniform(-global_translation_param, global_translation_param)
+    # add local noise to each element the resulting vector
+    corners_with_noise = corners_with_noise + utils.set_tensor_device(torch.FloatTensor(corners_with_noise.size())\
+        .uniform_(-local_translation_param, local_translation_param))
+    corners_with_noise = torch.reshape(corners_with_noise, (-1, 6, 2))
+    # generate  new homography matrix from canon points and new vector
+    perturbed_homography, _ = cv2.findHomography(utils.to_numpy(lower_canon_6pts), utils.to_numpy(corners_with_noise), cv2.RANSAC)
+    # print(f"original_corners:\n{original_corners}")
+    # print(f"corners_with_noise:\n{corners_with_noise}")
+    # print(f"gt_homography:\n{gt_homography}")
+    # print(f"perturbed_homography:\n{perturbed_homography}")
+    return utils.to_torch(perturbed_homography)

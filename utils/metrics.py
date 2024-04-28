@@ -18,11 +18,16 @@ class IOU(object):
         assert hasattr(opt, 'iou_space'), 'missing iou_space in options'
         assert hasattr(opt, 'dataset_name'), 'missing dataset_name in options'
         self.epsilon = 1e-6
-        if self.opt.dataset_name == 'world_cup':
-            self.template_width = 115
-            self.template_height = 74
-            self.frame_width = 256
-            self.frame_height = 256
+        # if self.opt.dataset_name == 'world_cup':
+        #     self.template_width = 115
+        #     self.template_height = 74
+        #     self.frame_width = 256
+        #     self.frame_height = 256
+        if self.opt.dataset_name == 'nba':
+            self.template_width = 640
+            self.template_height = 640
+            self.frame_width = 640
+            self.frame_height = 640
         else:
             raise ValueError(
                 'unknown dataset name: {0}'.format(self.opt.dataset_name))
