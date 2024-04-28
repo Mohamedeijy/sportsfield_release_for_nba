@@ -1,5 +1,5 @@
 """
-train the initial guesser on homography data
+test the initial guesser on homography data
 """
 import sys
 import os
@@ -55,7 +55,6 @@ def main():
 
     lr = 1e-4
     criterion = nn.MSELoss()
-    optim = torch.optim.Adam(params=initial_guesser.parameters(), lr=lr)
 
     test_error = evaluate_model(loader=test_loader, base_model=initial_guesser, loss_fn=criterion,
                                 batch_size=opt.batch_size)
