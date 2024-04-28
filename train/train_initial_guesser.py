@@ -33,7 +33,6 @@ def train_batch(frame, homography, base_model, optimizer, loss_fn, batch_size):
     loss.backward()
     optimizer.step()
     return loss
- # SOMETHING WRONG WITH MODEL OUTSIDE OF TRAIN FUNCTION, LIKE WITH GRAD OPTION OR SOMETHING. ANYWAY LOOK FOR TRAINING HELPERS
 
 
 def validate_batch(frame, homography, base_model, loss_fn, batch_size):
@@ -65,7 +64,7 @@ def main():
     # model
     initial_guesser = init_guesser.InitialGuesserFactory.get_initial_guesser(opt)
     initial_guesser = utils.set_model_device(initial_guesser)
-    print(summary(initial_guesser, (3, 640, 640)))
+    summary(initial_guesser, (3, 640, 640))
 
     lr = 1e-4
     criterion = nn.MSELoss()
@@ -101,7 +100,7 @@ def main():
     torch.save(best_model_state, os.path.join(opt.out_dir, 'pretrained_init_guess', 'checkpoint.pth.tar'))
     epochs = np.arange(opt.train_epochs)+1
     plt.plot(epochs, np.float32(train_loss), 'bo', label='Training loss')
-    plt.plot(epochs, np.float32(val_loss), 'r', label='Test loss')
+    plt.plot(epochs, np.float32(val_loss), 'r', label='Val loss')
     plt.title('Training and Validation loss over epochs')
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
